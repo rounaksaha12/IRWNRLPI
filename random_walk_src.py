@@ -1,17 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[12]:
-
-
 import numpy as np
 import pandas as pd
 
-
-# In[13]:
-
-
-def random_walk(rna_cnt, similarity_matrix, prot_id, Wq, Wu, rq, ru, output_file_name):
+def random_walk(inter, rna_cnt, similarity_matrix, prot_id, Wq, Wu, rq, ru, output_file_name):
     
     associated_rna=inter[inter.PROT_ID==prot_id].RNA_ID.to_numpy() 
     # rna in associated_rna == True if rna is labelled node
@@ -45,8 +35,6 @@ def random_walk(rna_cnt, similarity_matrix, prot_id, Wq, Wu, rq, ru, output_file
         X_init[i][0]=1/mod_Q
     
     X=X_init.copy()
-    rq=0.8
-    ru=0.4
     pq=np.matmul(filt,X)[0]
     pu=1-pq
     iter_cnt=0
@@ -59,7 +47,7 @@ def random_walk(rna_cnt, similarity_matrix, prot_id, Wq, Wu, rq, ru, output_file
         pq=np.matmul(filt,X)[0]
         pu=1-pq
 
-        if(np.linalg.norm(X-prev)<1e-10):
+        if(np.linalg.norm(X-prev,ord=1)<1e-10):
             break
         iter_cnt+=1
         # print("i:"+str(iter_cnt)+" "+str(X[0][0]))
@@ -78,10 +66,7 @@ def random_walk(rna_cnt, similarity_matrix, prot_id, Wq, Wu, rq, ru, output_file
         if index not in associated_rna:
             f.write(str(index)+'\t'+str(value)+'\n')
     f.close()
-
-
-# In[14]:
-
+    return
 
 rna_sim=pd.read_csv('rna_similarity.txt',sep='\t')
 prot_sim=pd.read_csv('prot_similarity.txt',sep='\t')
@@ -90,29 +75,17 @@ inter=pd.read_csv('list_of_interactions.txt',sep='\t')
 rna_cnt=inter['RNA_ID'].unique().shape[0]
 prot_cnt=inter['PROT_ID'].unique().shape[0]
 
-
-# In[15]:
-
-
 similarity_matrix=np.empty((rna_cnt,rna_cnt))
 for i in rna_sim.index:
     similarity_matrix[rna_sim['RNA(i)'][i]][rna_sim['RNA(j)'][i]]=rna_sim['Sim(i,j)'][i]
-
-
-# In[16]:
-
 
 output_file_name='random_walk_scores.txt'
 Wq=0.8
 Wu=0.4
 rq=0.8
 ru=0.4
+open(output_file_name,'w').close()
 for i in range(prot_cnt):
-    random_walk(rna_cnt,similarity_matrix,i,Wq,Wu,rq,ru,output_file_name)
-
-
-# In[ ]:
-
-
-
+    random_walk(inter, rna_cnt,similarity_matrix,i,Wq,Wu,rq,ru,output_file_name)
+    
 
